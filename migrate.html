@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数据迁移工具 · 筛单系统 Pro</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;min-height:100vh}
+.container{max-width:700px;margin:0 auto;padding:40px 20px}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+h1{font-size:22px;margin-bottom:6px}
+h2{font-size:16px;margin-bottom:12px}
+.step{margin-bottom:20px;padding:16px;background:#f8faff;border-radius:8px;border-left:3px solid #1a73e8}
+.step h3{font-size:15px;margin-bottom:8px;color:#1a73e8}
+.step p{font-size:13px;color:#666;line-height:1.6}
+.step code{background:#e8f0fe;padding:2px 6px;border-radius:3px;font-size:12px}
+.btn{padding:10px 20px;border-radius:6px;font-size:14px;cursor:pointer;border:none;font-weight:600;transition:all .2s}
+.btn-primary{background:#1a73e8;color:#fff}.btn-primary:hover{background:#1557b0}
+.btn-success{background:#0d9e6c;color:#fff}.btn-success:hover{background:#0b8258}
+textarea{width:100%;height:300px;border:2px dashed #c0c8d4;border-radius:8px;padding:12px;font-size:12px;font-family:monospace;resize:vertical}
+textarea:focus{outline:none;border-color:#1a73e8}
+input{width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:6px;font-size:14px;margin-bottom:12px}
+input:focus{outline:none;border-color:#1a73e8}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:20px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+.status{font-size:13px;color:#888;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>📦 数据迁移工具</h1>
+    <p style="color:#888;font-size:13px">从旧版筛单系统迁移311条订单到 Pro 版本</p>
+  </div>
+
+  <div class="card">
+    <h2>🔑 Supabase 连接配置</h2>
+    <input type="text" id="supabaseUrl" placeholder="Supabase URL (https://xxxxx.supabase.co)">
+    <input type="text" id="supabaseKey" placeholder="Supabase Anon Key (eyJhbGci...)">
+    <input type="password" id="userEmail" placeholder="目标账号邮箱">
+    <input type="password" id="userPassword" placeholder="目标账号密码">
+    <button class="btn btn-primary" onclick="connectSupabase()" id="btnConnect">🔗 连接 Supabase</button>
+    <div class="status" id="statusConnect"></div>
+  </div>
+
+  <div class="card">
+    <h2>📋 步骤1：从旧系统导出数据</h2>
+    <div class="step">
+      <h3>在旧版筛单系统页面按 F12 打开控制台，粘贴以下代码：</h3>
+      <p><code>copy(JSON.stringify(ORDER_DATA))</code></p>
+      <p>然后 Ctrl+V 粘贴到下方文本框：</p>
+    </div>
+    <textarea id="jsonData" placeholder="将复制的 JSON 数据粘贴到这里..."></textarea>
+    <button class="btn btn-success" onclick="importData()" id="btnImport" disabled>📥 导入到 Supabase</button>
+    <div class="status" id="statusImport"></div>
+  </div>
+
+  <div class="card" style="background:#fff8e1">
+    <h2>📋 步骤2（备选）：手动复制数据</h2>
+    <p style="font-size:13px;color:#888">如果步骤1不成功，可以打开旧系统网页，点击"一键复制当前列表"，然后粘贴到 Pro 系统的"粘贴追加新单子"框中分批导入。</p>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+let supabase = null;
+let currentUser = null;
+
+async function connectSupabase() {
+  const url = document.getElementById('supabaseUrl').value.trim();
+  const key = document.getElementById('supabaseKey').value.trim();
+  const email = document.getElementById('userEmail').value.trim();
+  const password = document.getElementById('userPassword').value.trim();
+
+  if (!url || !key || !email || !password) {
+    showToast('⚠️ 请填写所有字段');
+    return;
+  }
+
+  document.getElementById('btnConnect').textContent = '连接中...';
+  document.getElementById('btnConnect').disabled = true;
+
+  supabase = window.supabase.createClient(url, key);
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    document.getElementById('statusConnect').textContent = '❌ 登录失败: ' + error.message;
+    document.getElementById('statusConnect').style.color = '#d93025';
+    document.getElementById('btnConnect').textContent = '🔗 连接 Supabase';
+    document.getElementById('btnConnect').disabled = false;
+    return;
+  }
+
+  currentUser = data.user;
+  document.getElementById('statusConnect').textContent = '✅ 已连接！用户: ' + currentUser.email;
+  document.getElementById('statusConnect').style.color = '#0d9e6c';
+  document.getElementById('btnConnect').textContent = '✅ 已连接';
+  document.getElementById('btnImport').disabled = false;
+}
+
+async function importData() {
+  if (!currentUser) { showToast('⚠️ 请先连接 Supabase'); return; }
+
+  const raw = document.getElementById('jsonData').value.trim();
+  if (!raw) { showToast('⚠️ 请先粘贴导出的数据'); return; }
+
+  let orders;
+  try {
+    orders = JSON.parse(raw);
+  } catch (e) {
+    showToast('❌ JSON 格式错误，请重新复制');
+    return;
+  }
+
+  if (!Array.isArray(orders) || !orders.length) {
+    showToast('❌ 数据格式不正确');
+    return;
+  }
+
+  const btn = document.getElementById('btnImport');
+  btn.textContent = '导入中...';
+  btn.disabled = true;
+
+  let added = 0, skipped = 0;
+  const seen = new Set();
+
+  for (const d of orders) {
+    if (!Array.isArray(d) || d.length < 4) continue;
+    const row = {
+      user_id: currentUser.id,
+      district: d[0],
+      grade: d[1],
+      subject: d[2],
+      detail: d[3],
+      date_tag: '6.3'
+    };
+
+    const dedupKey = `${row.district}|${row.grade}|${row.subject}|${(row.detail||'').slice(0,60)}`;
+    if (seen.has(dedupKey)) { skipped++; continue; }
+    seen.add(dedupKey);
+
+    const { error } = await supabase.from('orders').insert(row);
+    if (!error) added++;
+    else console.error('Insert error:', error);
+  }
+
+  document.getElementById('statusImport').textContent = `✅ 完成！添加 ${added} 条，跳过 ${skipped} 条`;
+  document.getElementById('statusImport').style.color = '#0d9e6c';
+  btn.textContent = '✅ 导入完成';
+  showToast(`✅ 成功导入 ${added} 条订单`);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>

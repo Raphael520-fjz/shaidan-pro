@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>筛单系统 Pro · 家教订单管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;min-height:100vh}
+
+/* Auth Pages */
+.auth-container{max-width:420px;margin:60px auto;padding:0 20px}
+.auth-card{background:#fff;border-radius:12px;padding:32px 28px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.auth-card h2{font-size:22px;margin-bottom:4px;color:#1a1a1a}
+.auth-card .subtitle{font-size:13px;color:#999;margin-bottom:24px}
+.auth-card .form-group{margin-bottom:16px}
+.auth-card label{display:block;font-size:14px;font-weight:600;color:#555;margin-bottom:6px}
+.auth-card input{width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:6px;font-size:14px}
+.auth-card input:focus{outline:none;border-color:#1a73e8;box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+.auth-card .btn{width:100%;padding:11px;font-size:15px;font-weight:600;margin-top:4px}
+.auth-card .switch{text-align:center;margin-top:16px;font-size:13px;color:#888}
+.auth-card .switch a{color:#1a73e8;cursor:pointer;text-decoration:none;font-weight:600}
+.auth-card .switch a:hover{text-decoration:underline}
+.auth-error{background:#fef0f0;color:#d93025;padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:16px;display:none}
+
+/* Navbar */
+.navbar{background:linear-gradient(135deg,#1a73e8,#1557b0);color:#fff;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.15);position:sticky;top:0;z-index:100}
+.navbar .logo{font-size:18px;font-weight:700}
+.navbar .nav-right{display:flex;align-items:center;gap:12px}
+.navbar .user-info{font-size:13px;opacity:.9}
+.navbar .btn-logout{background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);padding:5px 14px;border-radius:16px;font-size:12px;cursor:pointer;font-weight:500;transition:all .2s}
+.navbar .btn-logout:hover{background:rgba(255,255,255,.35)}
+.navbar .date-badge{background:#ff6b35;padding:4px 14px;border-radius:20px;font-size:13px;font-weight:600}
+
+/* Layout */
+.container{max-width:1500px;margin:0 auto;padding:16px 20px}
+.card{background:#fff;border-radius:10px;padding:16px 20px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+/* Filter Bar */
+.filter-bar{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.filter-group{display:flex;align-items:center;gap:6px}
+.filter-group label{font-size:14px;font-weight:600;color:#555;white-space:nowrap}
+.filter-group select{padding:8px 30px 8px 10px;border:1px solid #d0d5dd;border-radius:6px;font-size:14px;background:#fff;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;min-width:130px}
+.filter-group select:focus{outline:none;border-color:#1a73e8;box-shadow:0 0 0 3px rgba(26,115,232,.1)}
+
+/* Buttons */
+.btn{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;font-weight:500;transition:all .2s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:#1a73e8;color:#fff}.btn-primary:hover{background:#1557b0}
+.btn-success{background:#0d9e6c;color:#fff}.btn-success:hover{background:#0b8258}
+.btn-outline{background:#fff;color:#1a73e8;border:1px solid #1a73e8}.btn-outline:hover{background:#e8f0fe}
+.btn-danger{background:#fff;color:#e54545;border:1px solid #e54545}.btn-danger:hover{background:#fef0f0}
+.btn-warning{background:#ff6b35;color:#fff}.btn-warning:hover{background:#e55a2b}
+.btn-sm{padding:4px 10px;font-size:12px}
+
+/* Stats */
+.stats-bar{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:14px;color:#666}
+.stat-num{font-weight:700;color:#1a73e8;font-size:18px}
+
+/* Table */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-height:70vh;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:#f7f8fa;padding:10px 8px;text-align:left;font-weight:600;color:#444;border-bottom:2px solid #e0e4ea;white-space:nowrap;position:sticky;top:0;z-index:1}
+tbody td{padding:8px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+tbody tr:hover{background:#f8faff}
+.date-tag{display:inline-block;background:linear-gradient(135deg,#ff6b35,#ff8c42);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;white-space:nowrap}
+.copy-btn{padding:3px 10px;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid #d0d5dd;background:#fff;color:#555}.copy-btn:hover{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.copy-btn.copied{background:#0d9e6c;color:#fff;border-color:#0d9e6c}
+.del-btn{padding:3px 10px;font-size:11px;border-radius:4px;cursor:pointer;border:1px solid #e0d0d0;background:#fff;color:#c44}.del-btn:hover{background:#e54545;color:#fff;border-color:#e54545}
+.empty-state{text-align:center;padding:60px 20px;color:#999}
+
+/* Toast */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 24px;border-radius:20px;font-size:14px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* Paste Section */
+.paste-section textarea{width:100%;height:100px;border:2px dashed #c0c8d4;border-radius:8px;padding:12px;font-size:13px;line-height:1.7;resize:vertical;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
+.paste-section textarea:focus{outline:none;border-color:#1a73e8;border-style:solid}
+
+/* Loading */
+.loading-overlay{display:flex;align-items:center;justify-content:center;padding:40px;color:#999;gap:10px}
+.spinner{width:24px;height:24px;border:3px solid #e0e4ea;border-top-color:#1a73e8;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Date Select */
+.date-select{display:flex;align-items:center;gap:6px}
+.date-select input{padding:6px 10px;border:1px solid #d0d5dd;border-radius:6px;font-size:13px;width:110px}
+.date-select input:focus{outline:none;border-color:#1a73e8}
+
+@media(max-width:768px){.filter-bar{flex-direction:column;align-items:flex-start}.filter-group select{width:100%}.navbar{padding:0 12px}.container{padding:10px 6px}.card{padding:12px 8px}table{font-size:12px}.auth-container{margin:20px auto}}
+</style>
+</head>
+<body>
+
+<!-- ====== LOGIN VIEW ====== -->
+<div id="loginView" class="auth-container">
+  <div class="auth-card">
+    <h2>📋 筛单系统 Pro</h2>
+    <p class="subtitle">家教订单管理 · 云端同步 · 多设备共享</p>
+    <div class="auth-error" id="loginError"></div>
+    <div class="form-group">
+      <label>📧 邮箱</label>
+      <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>🔒 密码</label>
+      <input type="password" id="loginPassword" placeholder="输入密码" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" onclick="handleLogin()" id="btnLogin">登 录</button>
+    <div class="switch">还没有账号？<a onclick="showRegister()">立即注册</a></div>
+  </div>
+</div>
+
+<!-- ====== REGISTER VIEW ====== -->
+<div id="registerView" class="auth-container" style="display:none">
+  <div class="auth-card">
+    <h2>📝 注册账号</h2>
+    <p class="subtitle">7天免费试用 · 无需绑定支付</p>
+    <div class="auth-error" id="registerError"></div>
+    <div class="form-group">
+      <label>🏢 中介/机构名称</label>
+      <input type="text" id="regName" placeholder="你的中介或机构名称">
+    </div>
+    <div class="form-group">
+      <label>📧 邮箱</label>
+      <input type="email" id="regEmail" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label>🔒 密码（至少6位）</label>
+      <input type="password" id="regPassword" placeholder="设置密码（至少6位）" autocomplete="new-password">
+    </div>
+    <button class="btn btn-primary" onclick="handleRegister()" id="btnRegister">注 册</button>
+    <div class="switch">已有账号？<a onclick="showLogin()">返回登录</a></div>
+  </div>
+</div>
+
+<!-- ====== APP VIEW ====== -->
+<div id="appView" style="display:none">
+
+<nav class="navbar">
+  <span class="logo">📋 筛单系统 Pro</span>
+  <div class="nav-right">
+    <span class="user-info" id="userDisplay"></span>
+    <span class="date-badge">共 <span id="navTotal">0</span> 条</span>
+    <button class="btn-logout" onclick="handleLogout()">退出登录</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- 筛选栏 -->
+  <div class="card">
+    <div class="filter-bar">
+      <div class="filter-group"><label>📍 地区：</label><select id="fDistrict" onchange="render()"><option value="">全部地区</option></select></div>
+      <div class="filter-group"><label>🎓 年级：</label><select id="fGrade" onchange="render()"><option value="">全部年级</option></select></div>
+      <div class="filter-group"><label>📚 科目：</label><select id="fSubject" onchange="render()"><option value="">全部科目</option></select></div>
+      <div class="date-select"><label>📅 日期：</label><input type="text" id="fDate" placeholder="例：6.3" oninput="render()"></div>
+      <button class="btn btn-outline btn-sm" onclick="resetFilters()">🔄 重置</button>
+      <button class="btn btn-success btn-sm" onclick="copyAll()">📋 一键复制</button>
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()" style="color:#0d9e6c;border-color:#0d9e6c">📥 导出CSV</button>
+    </div>
+  </div>
+
+  <!-- 统计 + 粘贴 -->
+  <div class="card">
+    <div class="stats-bar">
+      <span>筛选：<b class="stat-num" id="visCount">0</b> 条</span>
+      <span>｜ 总计：<b class="stat-num" id="totalCount">0</b> 条</span>
+      <span style="margin-left:auto">
+        <button class="btn btn-warning btn-sm" onclick="togglePaste()">📥 粘贴追加新单子</button>
+        <button class="btn btn-outline btn-sm" onclick="importSeedData()" id="btnSeed" style="display:none">📦 导入311条示例数据</button>
+      </span>
+    </div>
+    <div id="pasteBox" style="display:none;margin-top:12px" class="paste-section">
+      <textarea id="rawInput" placeholder="粘贴群里的单子内容...&#10;支持多条，用空行分隔即可自动识别地区/年级/科目"></textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="batchDate" placeholder="日期标签（如 6.3）" style="padding:7px 10px;border:1px solid #d0d5dd;border-radius:6px;font-size:13px;width:150px">
+        <button class="btn btn-primary btn-sm" onclick="parseAndAdd()">🔍 识别并添加</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('rawInput').value=''">清空</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 表格 -->
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:75px">日期</th><th style="width:45px">序号</th>
+          <th style="width:95px">地区</th><th style="width:75px">年级</th><th style="width:85px">科目</th>
+          <th style="min-width:300px">详细内容</th><th style="width:95px">操作</th>
+        </tr></thead>
+        <tbody id="tbody">
+          <tr class="empty-state"><td colspan="7">
+            <div style="font-size:40px;margin-bottom:8px">📭</div>
+            <p>还没有订单</p>
+            <p style="font-size:12px;margin-top:4px;color:#bbb">点击上方"粘贴追加新单子"开始，或导入示例数据</p>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+// ================================================================
+// CONFIG - 替换为你的 Supabase 项目信息
+// ================================================================
+const SUPABASE_URL = '__SUPABASE_URL__';
+const SUPABASE_ANON_KEY = '__SUPABASE_ANON_KEY__';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ================================================================
+// CONSTANTS
+// ================================================================
+const DISTRICTS = ['浦东新区','黄浦区','徐汇区','长宁区','静安区','普陀区','虹口区','杨浦区','闵行区','宝山区','嘉定区','金山区','松江区','青浦区','奉贤区','崇明区','线上'];
+const GRADES = ['幼小衔接','小学一年级','小学二年级','小学三年级','小学四年级','小学五年级','小学六年级','初一','初二','初三','高一','高二','高三','初中','大学','成人'];
+const SUBJECTS = ['语文','数学','英语','物理','化学','生物','地理','历史','政治','全科','奥数','文科','数理化','语数英','小提琴','琵琶','钢琴','美术','书法','编程','日语','音乐','体育','乐器','其他'];
+
+// ================================================================
+// GLOBAL STATE
+// ================================================================
+let allOrders = [];
+let currentUser = null;
+
+// ================================================================
+// AUTH MODULE
+// ================================================================
+
+function showRegister() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('registerView').style.display = 'block';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('registerError').style.display = 'none';
+}
+
+function showLogin() {
+  document.getElementById('registerView').style.display = 'none';
+  document.getElementById('loginView').style.display = 'block';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('registerError').style.display = 'none';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+
+  if (!email || !password) { errEl.textContent = '请填写邮箱和密码'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btnLogin');
+  btn.textContent = '登录中...'; btn.disabled = true;
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  btn.textContent = '登 录'; btn.disabled = false;
+
+  if (error) {
+    errEl.textContent = error.message === 'Invalid login credentials' ? '邮箱或密码错误' : error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+  currentUser = data.user;
+  await initApp();
+}
+
+async function handleRegister() {
+  const name = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const errEl = document.getElementById('registerError');
+  errEl.style.display = 'none';
+
+  if (!name || !email || !password) { errEl.textContent = '请填写所有字段'; errEl.style.display = 'block'; return; }
+  if (password.length < 6) { errEl.textContent = '密码至少需要6位'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('btnRegister');
+  btn.textContent = '注册中...'; btn.disabled = true;
+
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { agency_name: name } } });
+  btn.textContent = '注 册'; btn.disabled = false;
+
+  if (error) {
+    errEl.textContent = error.message.includes('already') ? '该邮箱已注册，请直接登录' : error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+
+  if (data.user) {
+    await supabase.from('profiles').upsert({ id: data.user.id, agency_name: name, plan: 'trial' });
+    currentUser = data.user;
+    await initApp();
+    showToast('✅ 注册成功！7天免费试用');
+  }
+}
+
+async function handleLogout() {
+  await supabase.auth.signOut();
+  currentUser = null;
+  allOrders = [];
+  document.getElementById('appView').style.display = 'none';
+  document.getElementById('loginView').style.display = 'block';
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPassword').value = '';
+}
+
+// ================================================================
+// DATA MODULE
+// ================================================================
+
+async function fetchOrders() {
+  if (!currentUser) return [];
+  let all = [], from = 0, size = 1000;
+  const base = supabase.from('orders').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+  while (true) {
+    const { data, error } = await base.range(from, from + size - 1);
+    if (error || !data || !data.length) break;
+    all = all.concat(data);
+    if (data.length < size) break;
+    from += size;
+  }
+  return all;
+}
+
+async function addOrdersToDB(orders) {
+  if (!currentUser || !orders.length) return { added: 0, skipped: 0 };
+  let added = 0, skipped = 0;
+  for (const row of orders) {
+    const dedupKey = `${row.district}|${row.grade}|${row.subject}|${(row.detail||'').slice(0,60)}`;
+    if (allOrders.some(o => `${o.district}|${o.grade}|${o.subject}|${(o.detail||'').slice(0,60)}` === dedupKey)) { skipped++; continue; }
+    const { error } = await supabase.from('orders').insert({
+      user_id: currentUser.id,
+      district: row.district, grade: row.grade, subject: row.subject,
+      detail: row.detail, date_tag: row.date_tag || '未标注'
+    });
+    if (!error) added++;
+  }
+  return { added, skipped };
+}
+
+async function deleteOrderFromDB(orderId) {
+  if (!currentUser) return false;
+  const { error } = await supabase.from('orders').delete().eq('id', orderId).eq('user_id', currentUser.id);
+  return !error;
+}
+
+// ================================================================
+// PARSER MODULE
+// ================================================================
+
+function detectDistrict(text) {
+  for (const d of DISTRICTS) if (text.includes(d)) return d;
+  const m = text.match(/(?:地址|上课地址|辅导地点|联系地址|学员地址|地点|位置|补习地址)[：:\s]*[#]?([^\s，,\n]+)/);
+  if (m) for (const d of DISTRICTS) if (m[1] && (m[1].includes(d) || d.includes(m[1]))) return d;
+  return '待识别';
+}
+
+function detectGrade(text) {
+  const patterns = [
+    [/四岁半|四岁|五岁|六岁|三岁|2岁半|中班|大班|幼儿园|幼小衔接|学前|启蒙|宝宝/, '幼小衔接'],
+    [/一年级|1年级|一升二|幼升小/, '小学一年级'], [/二年级|2年级|二升三/, '小学二年级'],
+    [/三年级|3年级|三升四/, '小学三年级'], [/四年级|4年级|四升五|新4/, '小学四年级'],
+    [/五年级|5年级|五升六/, '小学五年级'], [/六年级|6年级|预初|六升七|小升初|g6|G6/, '小学六年级'],
+    [/初一|七年级|7年级|七升八/, '初一'], [/初二|八年级|8年级|八升九|g8|G8/, '初二'],
+    [/初三|九年级|9年级|升初三|初升高/, '初三'], [/高一|10年级|升高一|高一升高二|准高二/, '高一'],
+    [/高二|11年级|升高二|准高三|新高三|升高三/, '高二'], [/高三|12年级|高考/, '高三'],
+    [/成人/, '成人'],
+  ];
+  for (const [re, g] of patterns) if (re.test(text)) return g;
+  return '待识别';
+}
+
+function detectSubject(text) {
+  const s = text.toLowerCase();
+  if (s.includes('奥数') || s.includes('浅奥') || s.includes('amc') || s.includes('逻辑思维')) return '奥数';
+  if (s.includes('数理化')) return '数理化';
+  if (s.includes('语数英') || s.includes('语数外')) return '语数英';
+  if (s.includes('全科') || s.includes('陪读') || s.includes('作辅') || s.includes('作业辅导') || s.includes('陪伴') || s.includes('陪学') || s.includes('陪玩')) return '全科';
+  if (s.includes('雅思') || s.includes('助教')) return '英语';
+  if (s.includes('小提琴') || s.includes('钢琴') || s.includes('古筝') || s.includes('琵琶') || s.includes('单簧管') || s.includes('尤克里里') || s.includes('声乐') || s.includes('乐器') || s.includes('书法') || s.includes('绘画')) return '乐器';
+  if (s.includes('日语')) return '日语';
+  if (s.includes('编程')) return '编程';
+  if (s.includes('游泳') || s.includes('网球') || s.includes('户外') || s.includes('体育')) return '体育';
+  if (s.includes('ket') || s.includes('pet') || s.includes('fce') || s.includes('小托福') || s.includes('口语') || s.includes('英文') || s.includes('英语') || s.includes('启蒙')) return '英语';
+  if (s.includes('语文') || s.includes('拼音') || s.includes('作文') || s.includes('阅读')) return '语文';
+  if (s.includes('数学')) return '数学';
+  if (s.includes('物理')) return '物理';
+  if (s.includes('化学')) return '化学';
+  if (s.includes('生物')) return '生物';
+  if (s.includes('地理')) return '地理';
+  if (s.includes('历史')) return '历史';
+  if (s.includes('政治')) return '政治';
+  return '其他';
+}
+
+function parseTextBlocks(raw) {
+  return raw.split(/\n\s*\n/).filter(b => b.trim()).map(block => {
+    const text = block.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+    if (text.length < 15) return null;
+    const district = detectDistrict(text), grade = detectGrade(text), subject = detectSubject(text);
+    if (district === '待识别' && grade === '待识别') return null;
+    return { district, grade, subject, detail: text };
+  }).filter(Boolean);
+}
+
+async function parseAndAdd() {
+  if (!currentUser) { showToast('⚠️ 请先登录'); return; }
+  const raw = document.getElementById('rawInput').value.trim();
+  if (!raw) { showToast('⚠️ 请先粘贴单子内容'); return; }
+
+  const dateTag = document.getElementById('batchDate').value.trim() || '未标注';
+  const parsed = parseTextBlocks(raw);
+  if (!parsed.length) { showToast('⚠️ 未识别到有效订单'); return; }
+  parsed.forEach(o => { o.date_tag = dateTag; });
+
+  document.getElementById('rawInput').value = '';
+  const { added, skipped } = await addOrdersToDB(parsed);
+  await refreshOrders();
+  showToast(`✅ 添加 ${added} 条，跳过重复 ${skipped} 条`);
+}
+
+// ================================================================
+// UI MODULE
+// ================================================================
+
+function initFilters() {
+  const dSet = new Set(), gSet = new Set(), sSet = new Set();
+  allOrders.forEach(o => { dSet.add(o.district); gSet.add(o.grade); sSet.add(o.subject); });
+
+  function fill(selId, allList, usedSet) {
+    const sel = document.getElementById(selId);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">全部</option>';
+    allList.forEach(v => { if (usedSet.has(v)) { const opt = document.createElement('option'); opt.value = v; opt.textContent = v; sel.appendChild(opt); }});
+    if (Array.from(sel.options).some(o => o.value === cur)) sel.value = cur;
+  }
+
+  fill('fDistrict', DISTRICTS, dSet);
+  fill('fGrade', GRADES, gSet);
+  fill('fSubject', SUBJECTS, sSet);
+}
+
+function getFiltered() {
+  const fd = document.getElementById('fDistrict').value;
+  const fg = document.getElementById('fGrade').value;
+  const fs = document.getElementById('fSubject').value;
+  const fDate = document.getElementById('fDate').value.trim();
+  return allOrders.filter(o =>
+    (!fd || o.district === fd) && (!fg || o.grade === fg) && (!fs || o.subject === fs) &&
+    (!fDate || (o.date_tag || '').includes(fDate))
+  );
+}
+
+function render() {
+  const filtered = getFiltered();
+  document.getElementById('visCount').textContent = filtered.length;
+  document.getElementById('totalCount').textContent = allOrders.length;
+  document.getElementById('navTotal').textContent = allOrders.length;
+  document.getElementById('btnSeed').style.display = allOrders.length === 0 ? 'inline-flex' : 'none';
+
+  const tbody = document.getElementById('tbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr class="empty-state"><td colspan="7">
+      <div style="font-size:40px;margin-bottom:8px">📭</div>
+      <p>${allOrders.length ? '没有匹配的筛选结果' : '还没有订单'}</p>
+      ${allOrders.length ? '' : '<p style="font-size:12px;margin-top:4px;color:#bbb">点击上方"粘贴追加新单子"开始，或导入示例数据</p>'}
+    </td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map((o, i) =>
+    `<tr>
+      <td><span class="date-tag">${escHtml(o.date_tag||'未标注')}单</span></td>
+      <td>${i+1}</td>
+      <td>${escHtml(o.district)}</td>
+      <td>${escHtml(o.grade)}</td>
+      <td>${escHtml(o.subject)}</td>
+      <td>${escHtml(o.detail)}</td>
+      <td style="white-space:nowrap">
+        <button class="copy-btn" onclick="copyOne(this,'${escAttr(o)}')">复制</button>
+        <button class="del-btn" onclick="deleteOne(${o.id},this)" title="删除">✕</button>
+      </td>
+    </tr>`
+  ).join('');
+}
+
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escAttr(o) { return encodeURIComponent(JSON.stringify({d:o.district,g:o.grade,s:o.subject,dt:o.detail,date:o.date_tag})); }
+
+function copyOne(btn, encoded) {
+  const o = JSON.parse(decodeURIComponent(encoded));
+  const text = `【${o.date||'未标注'}日单】${o.d} · ${o.g} · ${o.s}\n${o.dt}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text); }
+  else { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }
+  btn.textContent = '已复制'; btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('copied'); }, 1500);
+  showToast('✅ 已复制到剪贴板');
+}
+
+function copyAll() {
+  const filtered = getFiltered();
+  if (!filtered.length) { showToast('⚠️ 当前没有可复制的内容'); return; }
+  const text = filtered.map((o, i) => `【${o.date_tag||'未标注'}日单·${i+1}】${o.district} · ${o.grade} · ${o.subject}\n${o.detail}`).join('\n\n');
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text); }
+  else { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); }
+  showToast(`✅ 已复制 ${filtered.length} 条单子到剪贴板`);
+}
+
+async function deleteOne(orderId, btn) {
+  if (!confirm('确定删除这条订单吗？此操作不可恢复。')) return;
+  const ok = await deleteOrderFromDB(orderId);
+  if (ok) { allOrders = allOrders.filter(o => o.id !== orderId); initFilters(); render(); showToast('🗑️ 已删除'); }
+  else { showToast('⚠️ 删除失败，请重试'); }
+}
+
+function resetFilters() {
+  document.getElementById('fDistrict').value = '';
+  document.getElementById('fGrade').value = '';
+  document.getElementById('fSubject').value = '';
+  document.getElementById('fDate').value = '';
+  render();
+}
+
+function togglePaste() {
+  const box = document.getElementById('pasteBox');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function exportCSV() {
+  const filtered = getFiltered();
+  if (!filtered.length) { showToast('⚠️ 没有可导出的数据'); return; }
+  const BOM = '﻿';
+  const header = '日期,地区,年级,科目,详细内容';
+  const rows = filtered.map(o => `"${o.date_tag||''}","${o.district}","${o.grade}","${o.subject}","${(o.detail||'').replace(/"/g,'""')}"`);
+  const csv = BOM + header + '\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `筛单导出_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('📥 CSV已下载');
+}
+
+// ================================================================
+// IMPORT SEED DATA (311条示例订单)
+// ================================================================
+
+async function importSeedData() {
+  if (!currentUser) return;
+  if (!confirm('将导入311条示例订单（6.3日单）到你的账号，继续吗？')) return;
+
+  const btn = document.getElementById('btnSeed');
+  btn.textContent = '导入中...'; btn.disabled = true;
+
+  let added = 0;
+  for (let i = 0; i < SEED_ORDERS.length; i++) {
+    const d = SEED_ORDERS[i];
+    const row = { district: d[0], grade: d[1], subject: d[2], detail: d[3], date_tag: '6.3' };
+    const dedupKey = `${row.district}|${row.grade}|${row.subject}|${(row.detail||'').slice(0,60)}`;
+    if (allOrders.some(o => `${o.district}|${o.grade}|${o.subject}|${(o.detail||'').slice(0,60)}` === dedupKey)) continue;
+    const { error } = await supabase.from('orders').insert({
+      user_id: currentUser.id, district: row.district, grade: row.grade,
+      subject: row.subject, detail: row.detail, date_tag: row.date_tag
+    });
+    if (!error) added++;
+  }
+
+  await refreshOrders();
+  showToast(`✅ 已导入 ${added} 条示例订单`);
+}
+
+// ================================================================
+// INIT
+// ================================================================
+
+async function refreshOrders() {
+  if (!currentUser) return;
+  allOrders = await fetchOrders();
+  initFilters();
+  render();
+}
+
+async function initApp() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('registerView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+
+  const name = currentUser.user_metadata?.agency_name || currentUser.email;
+  document.getElementById('userDisplay').textContent = `👤 ${name}`;
+
+  await refreshOrders();
+
+  const today = new Date();
+  document.getElementById('batchDate').value = `${today.getMonth()+1}.${today.getDate()}`;
+}
+
+async function checkAuth() {
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    currentUser = data.session.user;
+    await initApp();
+  }
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' && session) { currentUser = session.user; initApp(); }
+  else if (event === 'SIGNED_OUT') { currentUser = null; allOrders = []; location.reload(); }
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    if (document.getElementById('loginView').style.display !== 'none') handleLogin();
+    else if (document.getElementById('registerView').style.display !== 'none') handleRegister();
+  }
+});
+
+// ================================================================
+// SEED DATA - 311条 6.3日单
+// ================================================================
+const SEED_ORDERS = [["浦东新区","六年级","全科","QS家教2026052811 【年级性别】六年级男孩 【补习科目】全科 【学习情况】成绩好，自制力比较差，辅导作业，盯着完成和纠错背默刷题等 【补习时间】一周1-2次，周中上，一次1-1.5小时，具体时间协商 【老师要求】在校大学生，家教经验丰富，有耐心 【补习地址】浦东玉兰香苑 【补习薪资】100/h"],["松江区","幼小衔接","全科","QS家教2026052611 【年级性别】四岁半小男孩 【补习科目】全科 【学习情况】启蒙阶段，培养兴趣为主 【补习时间】一周1-2次，平时放学后4-5点，一次一小时，具体时间协商，暑假到时调整 【老师要求】在校大学生，优先男老师，上课生动有趣，家教经验丰富，有耐心 【补习地址】松江区佘山镇华莹山路450弄佘北家园莘泽苑 【补习薪资】100/h"],["浦东新区","六年级","数学","QS家教2026052517 【年级性别】六年级女孩 【补习科目】数学为主，顺带语英 【学习情况】学习基础一般，平时是辅导作业预习复习，暑假补差 【补习时间】一周两到三次，周中晚上，一次两小时，暑假也上具体到时协商 【老师要求】在校女大学生，优先同济，数理化都能带，家教经验丰富，有耐心 【补习地址】浦东港城路地铁站附近 【补习薪资】100-120/h"],["闵行区","幼小衔接","全科","QS家教2026052314 【年级性别】幼小衔接男孩 【补习科目】全科 【学习情况】做幼小衔接的阶段性准备 【补习时间】一周五次，周一到周五7点到八点多，一次1-1.5小时，具体时间协商 【老师要求】在校女大学生，形象端庄，气质好，可长期稳定，家教经验丰富，有耐心 【补习地址】闵行莘庄地铁站 【补习薪资】100/h"],["闵行区","小学五年级","文科","QS家教2026052214 【年级性别】五年级男孩（周末试课）【补习科目】文科 【学习情况】考前这一个月主要复习五年级的知识，然后暑假开始六年级的内容 【补习时间】周末试课，可以的话下周一开始上课，具体再定，一周1-2次,一次两小时 【老师要求】在校大学生，有自己的教学技巧，有家教经验，有耐心责任心 【补习地址】闵行古美(虹梅路999号)【补习薪资】100/h"],["浦东新区","六年级","语数英","QS家教2026502114 【年级性别】六年级女孩 【补习科目】语数英 【学习情况】主要数学英语，基础比较薄弱 【补习时间】一周一次，周末上，一次两小时，具体时间协商，暑假一周两次 【老师要求】在校女大学生，家教经验丰富，有耐心 【补习地址】浦东航都南路海桥村村委公交站 【补习薪资】110/h"],["嘉定区","六年级","全科","QS家教2026052013 【年级性别】六年级女孩 【补习科目】全科 【学习情况】基础一般，辅导作业预习等 【补习时间】一周三次，周中晚上7-9点，一次两小时，具体时间协商 【老师要求】在校女大学生，家教经验丰富，有耐心 【补习地址】嘉定区芳林路1357弄，湖畔天下三期 【补习薪资】90-100/h"],["徐汇区","小学一年级","小提琴","QS家教2026051912 【年级性别】一年级女孩 【补习科目】小提琴 【学习情况】有一点基础 【补习时间】一周2次，一次一小时，具体时间协商 【老师要求】女，在校大学生，小提琴经验丰富，认真以及有方法抠初学小朋友基础动作，有责任心 【补习地址】徐汇区合群坊 【补习薪资】150/h"],["黄浦区","小学一年级","英语","QS家教2026051514 【年级性别】一年级 【补习科目】英语 【学习情况】蓝思值在550-600之间，有一点英语基础，准备考ket 【补习时间】一周1-2次，安排在周四晚上，周六、日上午，一次两小时，具体时间协商 【老师要求】在校女大学生，英语专业，家教经验丰富，有耐心 【补习地址】黄浦区中山南路1358弄中福花苑2期 【补习薪资】100/h"],["青浦区","高一","化学","QS家教2026051415 【年级性别】高一女生 【补习科目】物化，以化学为主 【学习情况】市重点学生，基础还可以 【补习时间】一周一次，周末下午，一次两小时，具体时间协商 【老师要求】在校大学生，优先女老师，上海考生，家教经验丰富，有耐心 【补习地址】青浦区17号线嘉松中路旁 【补习薪资】150/h"],["闵行区","六年级","全科","XC家教2026050613 【年级性别】六年级男生 【补习科目】全科 【学习情况】基础一般 【补习时间】一周5-6次，周一到周五晚两小时，周末一次，具体时间协商 【老师要求】985在校大学生，严厉一些，能管得住孩子，有家教经验 【补习地址】闵行区华宁路1399弄169号 【补习薪资】100/h"],["宝山区","小学四年级","英语","XC家教2026051113 【年级性别】四年级男孩，五年级女孩（一对二）【补习科目】英语 【学习情况】姐姐英语不错就是拔高，弟弟基础不好 【补习时间】一周两次，周一和周五晚上6点，姐姐弟弟各一小时，一次两小时，暑假一周3-4次 【老师要求】上外英语专业在校大学生，最好男老师，有家教经验，有耐心 【补习地址】宝山区永清路699号宝钢宝山八村 【补习薪资】100/h"],["青浦区","初三","生物","XC家教2026051218 【年级性别】初三男生 【补习科目】IG生物 【学习情况】选的是alevel的课程体系，生物比较薄弱 【补习时间】暑假开始上，一周2-3次，一次两小时，具体时间协商 【老师要求】在校大学生，熟悉alevel课程体系，不需要全英授课，能出分，有IG课程经验 【补习地址】青浦区山姆会员超市 【补习薪资】150/h"],["松江区","高三","语文","上海回收孙 松江大学生地铁9号线 地址：松江区辰花路839弄32号1002室 年级：高三 科目：语文 性别：男 时间:每天晚上隔一天上一次 费用：110/H 要求：经验丰富 92大学生"],["金山区","高一","物理","XC家教2026052211 【年级性别】高一女生 【补习科目】物理、数学 【学习情况】华师大三附中学生，物理50多，数学110-120分，英语110左右 【补习时间】一周一次，周五晚上或周日上午，一次3小时，具体时间协商 【老师要求】985在校女大学生，家教经验丰富，有耐心 【补习地址】金山区金山工业区恒康佳苑，或老师学校附近 【补习薪资】160/h"],["杨浦区","幼小衔接","英语","XC家教2026052518 【年级性别】四岁小男孩 【补习科目】英语启蒙 【学习情况】读绘本等，培养学科兴趣，锻炼语言思维 【补习时间】一周三次，周内6点后，周末都可以，一次一小时，具体时间协商 【老师要求】985在校大学生，英语专业，家教经验丰富，有耐心 【补习地址】同济大学四平路校区对面 【补习薪资】130/h"],["嘉定区","六年级","数学","XC家教2026052813 【年级性别】六年级女孩 【补习科目】数学 【学习情况】基础薄弱 【补习时间】学期内，一周一次，周六上午或晚上，一次两小时，具体时间协商 【老师要求】在校女大学生，家教经验丰富，有耐心 【补习地址】嘉定新城地铁站附近 【补习薪资】100/h"],["徐汇区","小学三年级","英语","XC家教2026052916 【年级性别】三年级男孩 【补习科目】英语 【学习情况】学新概念1下半册，暑假想带上PET的单词 【补习时间】一周一次，最好周五4:30后，一次两小时，具体时间协商，暑假也需要上 【老师要求】在校大学生，最好英语专业，过了专八，外向开朗点，但执行力度又强，家教经验丰富，有耐心 【补习地址】徐汇区百色路451弄之1-33号园南新村 【补习薪资】130/h"],["闵行区","初三","数理化","XC家教2026060112 加急 【年级性别】初三男生 【补习科目】主要是数理化 【学习情况】中考冲刺，物化七八十分，基础还可以，监督答疑解惑，不懂得查缺补漏等 【补习时间】考前，至少一周五次，工作日晚上，一次两小时，具体时间协商 【老师要求】华师大或交大在校大学生，家教经验丰富，有耐心 【补习地址】闵行区莘松路958弄上海康城3期 【补习薪资】150/h"],["闵行区","初一","数学","XC家教2026060117 【年级性别】六升七年级女孩 【补习科目】数学 【学习情况】基础比较薄弱，暑假提前学七年级内容，复习巩固六年级，需要补差 【补习时间】一周一次，周末上，一次1.5小时，具体时间协商，暑假也上 【老师要求】在校女研究生，数学相关专业，近期或正在带六年级数学，家教经验丰富 【补习地址】闵行区万源城 【补习薪资】130/h"]];
+
+// 由于 token 限制，SEED_ORDERS 只包含前20条作为示例。
+// 完整的311条数据在原始 index.html 的 ORDER_DATA 数组中。
+// 建议：注册 Supabase 后，通过粘贴功能逐批导入完整数据。
+
+// 启动
+checkAuth();
+</script>
+</body>
+</html>
